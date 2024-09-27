@@ -10,4 +10,5 @@ fun main() {
     val path = Path.of("src").resolve("main").resolve("kotlin").resolve("ficheros")
     cotiza.ObtenerInfo(path).forEach { println(it)  }
     cotiza.MakeApproved(path,cotiza.ObtenerInfo(path))
+
 }
