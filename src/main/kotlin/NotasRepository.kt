@@ -27,8 +27,8 @@ class CotizacionRepository {
 
                 val map = mutableMapOf(Pair(first = "Apell", second = allSpliteado?.get(0)),
                     Pair("Name",allSpliteado?.get(1)),
-                    Pair("Asist",allSpliteado?.get(2)),
-                    Pair("qualification",CalQualification(allSpliteado))
+                    Pair("Asist",allSpliteado?.get(2)?.replace("%","")),
+                    Pair("Qualification",CalQualification(allSpliteado))
                 )
                 alumnadoInfo.add(map)
 
@@ -38,9 +38,7 @@ class CotizacionRepository {
     }
 //Una función que reciba una lista de diccionarios como la que devuelve la función anterior y añada a cada diccionario un nuevo par con la nota final del curso. El peso de cada parcial de teoría en la nota final es de un 30% mientras que el peso del examen de prácticas es de un 40%.
     fun CalQualification(allSpliteado: List<String>):String{
-
         var notaFinal = 0.0
-
 
         //primer parcial
         if ((allSpliteado[3].replace(",",".").toDoubleOrNull() ?: 0.0) > (allSpliteado[5].replace(",",".").toDoubleOrNull() ?: 0.0)){
@@ -75,22 +73,55 @@ class CotizacionRepository {
     }
 
 
-    fun MakeSummary(paht: Path, map: MutableList<MutableMap<String, String?>>) {
+    fun MakeApproved(paht: Path, map: MutableList<MutableMap<String, String?>>) {
 
-        val pahtFinal = paht.resolve("calificacionesFinal.csv")
+        val aprabados :MutableList<MutableMap<String, String?>> = mutableListOf()
+        val suspensos :MutableList<MutableMap<String, String?>> = mutableListOf()
+
+        for (alum in map){
+            if ((alum.get("Qualification")?.toDoubleOrNull() ?: 0.0) > 5.0 && ((alum.get("Asist")?.toIntOrNull())?: 0) >= 75){
+                aprabados.add(alum)
+            }else{
+                suspensos.add(alum)
+            }
+        }
+        WriteApproved(paht,aprabados)
+        WriteSuspend(paht,suspensos)
+    }
+
+    fun WriteApproved(paht: Path,aprabados :MutableList<MutableMap<String, String?>>){
+        val pahtFinal = paht.resolve("AlumnosAprobados.csv")
         if (pahtFinal.notExists()) {
             pahtFinal.createFile()
         }
 
-        var numero = 0
-        val bw = Files.newBufferedWriter(pahtFinal)
+        val bw = Files.newBufferedWriter(pahtFinal,StandardOpenOption.APPEND)
 
         bw.use {
-            bw.write("pan;cebolla;sepia")
-            for (i in map) {
-                bw.append()
+            bw.write("Apellido;Nombre;asistencia;Nota")
+            for (alum in aprabados) {
+                bw.newLine()
+                bw.append("${alum.get("Apell")};${alum.get("Name")};${alum.get("Asist")};${alum.get("Qualification")};")
 
-                numero++
+            }
+
+        }
+    }
+
+    fun WriteSuspend(paht: Path,aprabados :MutableList<MutableMap<String, String?>>){
+        val pahtFinal = paht.resolve("AlumnosSuspendidos.csv")
+        if (pahtFinal.notExists()) {
+            pahtFinal.createFile()
+        }
+
+        val bw = Files.newBufferedWriter(pahtFinal,StandardOpenOption.APPEND)
+
+        bw.use {
+            bw.write("Apellido;Nombre;asistencia;Nota")
+            for (alum in aprabados) {
+                bw.newLine()
+                bw.append("${alum.get("Apell")};${alum.get("Name")};${alum.get("Asist")};${alum.get("Qualification")};")
+
             }
 
         }
