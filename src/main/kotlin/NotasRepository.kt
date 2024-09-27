@@ -1,8 +1,11 @@
 package org.example.repository
 
+import jdk.dynalink.StandardOperation
 import java.io.BufferedReader
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.nio.file.StandardOpenOption
 import kotlin.io.path.createFile
 import kotlin.io.path.notExists
 
@@ -23,7 +26,7 @@ class CotizacionRepository {
                 val allSpliteado = line.split(";")
 
                 val map = mutableMapOf(Pair(first = "Apell", second = allSpliteado?.get(0)),
-                    Pair("Asist",allSpliteado?.get(1)),
+                    Pair("Name",allSpliteado?.get(1)),
                     Pair("Asist",allSpliteado?.get(2)),
                     Pair("qualification",CalQualification(allSpliteado))
                 )
@@ -33,26 +36,46 @@ class CotizacionRepository {
         }
         return alumnadoInfo
     }
-
+//Una función que reciba una lista de diccionarios como la que devuelve la función anterior y añada a cada diccionario un nuevo par con la nota final del curso. El peso de cada parcial de teoría en la nota final es de un 30% mientras que el peso del examen de prácticas es de un 40%.
     fun CalQualification(allSpliteado: List<String>):String{
 
-        var sumNote = 0.0
-        var notaParcial1 = 0.0
-        var notaParcial2 = 0.0
-        var notaPracticas = 0.0
         var notaFinal = 0.0
 
-        for (view in 3..8){
-            if (allSpliteado[view].isEmpty()){
-                sumNote+=0
-            }else{
-                sumNote += allSpliteado[view].replace(",",".").toDouble()
-            }
+
+        //primer parcial
+        if ((allSpliteado[3].replace(",",".").toDoubleOrNull() ?: 0.0) > (allSpliteado[5].replace(",",".").toDoubleOrNull() ?: 0.0)){
+            notaFinal+=CalNoteParcial(allSpliteado[3].replace(",",".").toDoubleOrNull() ?: 0.0)
+        }else{
+            notaFinal+=CalNoteParcial(allSpliteado[5].replace(",",".").toDoubleOrNull() ?: 0.0)
         }
-        return sumNote.toString()
+        //segundo parcial
+        if ((allSpliteado[4].replace(",",".").toDoubleOrNull() ?: 0.0) > (allSpliteado[6].replace(",",".").toDoubleOrNull() ?: 0.0)){
+            notaFinal+=CalNoteParcial(allSpliteado[4].replace(",",".").toDoubleOrNull() ?: 0.0)
+        }else{
+            notaFinal+=CalNoteParcial(allSpliteado[6].replace(",",".").toDoubleOrNull() ?: 0.0)
+        }
+        //Practicas
+        if ((allSpliteado[7].replace(",",".").toDoubleOrNull() ?: 0.0) > (allSpliteado[8].replace(",",".").toDoubleOrNull() ?: 0.0)){
+            notaFinal+=CalNotePractice(allSpliteado[7].replace(",",".").toDoubleOrNull() ?: 0.0)
+        }else{
+            notaFinal+=CalNotePractice(allSpliteado[8].replace(",",".").toDoubleOrNull() ?: 0.0)
+        }
+
+        return String.format("%.2f", notaFinal)
     }
 
-    fun MakeSummary(paht: Path,map: MutableMap< Int,List<String>>) {
+    fun CalNotePractice(notePractice:Double):Double{
+        return notePractice*0.4
+    }
+
+    fun CalNoteParcial(noteParcial:Double):Double{
+
+        return noteParcial*0.3
+
+    }
+
+
+    fun MakeSummary(paht: Path, map: MutableList<MutableMap<String, String?>>) {
 
         val pahtFinal = paht.resolve("calificacionesFinal.csv")
         if (pahtFinal.notExists()) {
@@ -63,15 +86,9 @@ class CotizacionRepository {
         val bw = Files.newBufferedWriter(pahtFinal)
 
         bw.use {
+            bw.write("pan;cebolla;sepia")
             for (i in map) {
-                val max = map.get(numero)?.get(2)?.replace(".", "")?.replace(",", ".")?.toDouble() ?: 0.0
-                val min = map.get(numero)?.get(3)?.replace(".", "")?.replace(",", ".")?.toDouble() ?: 0.0
-                val media = ((min + max) / 2).toString().format("%.2f").replace(",",".")
-                it.write(
-                    "Name : ${
-                        map.get(numero)?.get(0)
-                    }  |  maximus : ${max}  |  minimum : ${min} |  average : ${media}\n"
-                )
+                bw.append()
 
                 numero++
             }

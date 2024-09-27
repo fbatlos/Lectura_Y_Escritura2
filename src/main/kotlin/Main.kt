@@ -9,6 +9,6 @@ fun main() {
     val cotiza = CotizacionRepository()
     val path = Path.of("src").resolve("main").resolve("kotlin").resolve("ficheros")
     cotiza.ObtenerInfo(path).forEach { println(it)  }
-   // cotiza.MakeSummary(path,cotiza.ShowAll(path))
+    cotiza.MakeSummary(path,cotiza.ObtenerInfo(path))
 
 }
